@@ -170,24 +170,48 @@
         var car = createCar();
 
         // Create a simple ground with green color
-        var groundGeometry = new THREE.PlaneGeometry(2000, 2000);
-        var groundMaterial = new THREE.MeshBasicMaterial({ color: 0x00ff00, side: THREE.DoubleSide });
-        var ground = new THREE.Mesh(groundGeometry, groundMaterial);
-        ground.rotation.x = Math.PI / 2;
-        ground.position.y = -1;
-        scene.add(ground);
+        var groundTexture = new THREE.TextureLoader().load('https://tse3-mm.cn.bing.net/th/id/OIP-C.T1tIeMTtO9O5vR3rrFZ-ngHaEK?rs=1&pid=ImgDetMain');
+	groundTexture.wrapS = groundTexture.wrapT = THREE.RepeatWrapping; 
+	groundTexture.repeat.set(200, 200); // Adjust based on your texture size
+
+	var groundGeometry = new THREE.PlaneGeometry(2000, 2000);
+	var groundMaterial = new THREE.MeshStandardMaterial({ 
+   	 map: groundTexture,
+   	 side: THREE.DoubleSide
+	});
+	var ground = new THREE.Mesh(groundGeometry, groundMaterial);
+	ground.rotation.x = Math.PI / 2;
+	ground.position.y = -1;
+	scene.add(ground);
 
         // Create airports with runways, terminals, and gates
         function createAirport(x, z, runwayRotation) {
-            var airportGeometry = new THREE.BoxGeometry(2, 0.1, 2);
+            var airportGeometry = new THREE.BoxGeometry(0.000001, 0.000001, 0.000001);
             var airportMaterial = new THREE.MeshBasicMaterial({ color: 0x0000ff });
             var airport = new THREE.Mesh(airportGeometry, airportMaterial);
             airport.position.set(x, -0.95, z);
             scene.add(airport);
 
-            var runwayGeometry = new THREE.PlaneGeometry(20, 2); // Make the runway longer
-            var runwayMaterial = new THREE.MeshBasicMaterial({ color: 0x808080, side: THREE.DoubleSide });
-            var runway = new THREE.Mesh(runwayGeometry, runwayMaterial);
+            // Load runway texture
+	var runwayTexture = new THREE.TextureLoader().load('https://media-hosting.imagekit.io/ae5ae9d571a44a58/%E5%B1%8F%E5%B9%95%E6%88%AA%E5%9B%BE%202025-04-19%20133245.png?Expires=1839649748&Key-Pair-Id=K2ZIVPTIP2VGHC&Signature=GX4tTPskthxjqCIFpFDKDmmFOxivlF98zyIXXvvDQERVmVHCTM0stmjRxF3h4M3krzRL~q2N3MK9P0GX9Co2Mmv2CJgDROFliKkrylL9edr-K6B3PLVg6s0VWnbSzzvPfiDHZmsuMKP0cAb6uKhph0PmGqvZxr4sjHd85OcBSZMuWENga0SMcJbNuluogl933MwO7jUK5EdTQrU9wjJBJvfx56jRiWF8Qm~e14Qp-cLo7YDvyyIHg33ShvpEMH7cik-BAbIPjeJSakHEQmcUiCncuwXLUr3Bt3LOk9QpDExoj8DKFhcZbhZQCXg63uf0D1LoalcFlaBRjfb578eCZw__');
+	runwayTexture.wrapS = runwayTexture.wrapT = THREE.RepeatWrapping;
+	runwayTexture.repeat.set(1, 1); // Adjust based on your texture aspect ratio
+	
+	// Load runway markings texture (optional)
+	var markingsTexture = new THREE.TextureLoader().load('textures/runway_markings.png');
+	markingsTexture.wrapS = markingsTexture.wrapT = THREE.RepeatWrapping;
+	
+	// Create runway material
+	var runwayMaterial = new THREE.MeshStandardMaterial({
+	    map: runwayTexture,
+	    side: THREE.DoubleSide,
+	    roughness: 0.7,
+	    metalness: 0.3
+	});
+	
+	// Create runway mesh
+	var runwayGeometry = new THREE.PlaneGeometry(20, 2);
+	var runway = new THREE.Mesh(runwayGeometry, runwayMaterial);
             runway.rotation.x = Math.PI / 2;
             runway.rotation.z = runwayRotation;
             runway.position.set(x, -0.94, z + 10); // Adjust position to match the longer runway
@@ -208,15 +232,40 @@
 
         // Create tall and colorful buildings
         function createBuilding(x, z) {
-            var height = Math.random() * 5 + 1;
-            var color = Math.random() * 0xffffff;
-            var buildingGeometry = new THREE.BoxGeometry(1, height, 1);
-            var buildingMaterial = new THREE.MeshBasicMaterial({ color: color });
-            var building = new THREE.Mesh(buildingGeometry, buildingMaterial);
-            building.position.set(x, height / 2 - 1, z);
-            scene.add(building);
-            return building;
-        }
+    var height = Math.random() * 5 + 1;
+    
+    // Load building textures (front, side, top)
+    var frontTexture = new THREE.TextureLoader().load('https://media-hosting.imagekit.io/e453cefa64b141ee/667b3862-9b4c-4e98-aee7-874f1b8f78cb.jpg?Expires=1839651765&Key-Pair-Id=K2ZIVPTIP2VGHC&Signature=cRPAUACtXz9Z5SMeLhMdDiLzDwV27P~2vkUgtFWQ2SLWDqo0eQ~rvopWWaoIbtWeVOH30JojSJ1ZwM0GnZl~IYLDe3bKqJcwqxNbifB~NoFrfjv7MF~of4HOsNUEpl~uPOmQwUE6gxeO86U-XJUedT~CDYUTvHc72jZVIpUnYon9Sq7476Xe2HGDpvOivSpYmMkCD38U6e4VlQON7dYHzmeJZDNXBfcsTZTJ2y5RH8xOdSusD1Seiw1V5f57RS9bRQqZER8eSaOlhsVCQD1hO3GSMDodRoNa3WxDWGXvJEgmFyoZXAOX4HptlscI-nYPY3rXLYf~0zN4v85VEw00fw__');
+    var sideTexture = new THREE.TextureLoader().load('https://media-hosting.imagekit.io/e453cefa64b141ee/667b3862-9b4c-4e98-aee7-874f1b8f78cb.jpg?Expires=1839651765&Key-Pair-Id=K2ZIVPTIP2VGHC&Signature=cRPAUACtXz9Z5SMeLhMdDiLzDwV27P~2vkUgtFWQ2SLWDqo0eQ~rvopWWaoIbtWeVOH30JojSJ1ZwM0GnZl~IYLDe3bKqJcwqxNbifB~NoFrfjv7MF~of4HOsNUEpl~uPOmQwUE6gxeO86U-XJUedT~CDYUTvHc72jZVIpUnYon9Sq7476Xe2HGDpvOivSpYmMkCD38U6e4VlQON7dYHzmeJZDNXBfcsTZTJ2y5RH8xOdSusD1Seiw1V5f57RS9bRQqZER8eSaOlhsVCQD1hO3GSMDodRoNa3WxDWGXvJEgmFyoZXAOX4HptlscI-nYPY3rXLYf~0zN4v85VEw00fw__');
+    var windowTexture = new THREE.TextureLoader().load('https://media-hosting.imagekit.io/e453cefa64b141ee/667b3862-9b4c-4e98-aee7-874f1b8f78cb.jpg?Expires=1839651765&Key-Pair-Id=K2ZIVPTIP2VGHC&Signature=cRPAUACtXz9Z5SMeLhMdDiLzDwV27P~2vkUgtFWQ2SLWDqo0eQ~rvopWWaoIbtWeVOH30JojSJ1ZwM0GnZl~IYLDe3bKqJcwqxNbifB~NoFrfjv7MF~of4HOsNUEpl~uPOmQwUE6gxeO86U-XJUedT~CDYUTvHc72jZVIpUnYon9Sq7476Xe2HGDpvOivSpYmMkCD38U6e4VlQON7dYHzmeJZDNXBfcsTZTJ2y5RH8xOdSusD1Seiw1V5f57RS9bRQqZER8eSaOlhsVCQD1hO3GSMDodRoNa3WxDWGXvJEgmFyoZXAOX4HptlscI-nYPY3rXLYf~0zN4v85VEw00fw__');
+    
+    // Configure texture repeating
+    [frontTexture, sideTexture, windowTexture].forEach(tex => {
+        tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+        tex.repeat.set(1, Math.floor(height)); // Adjust based on building height
+    });
+
+    // Create materials for each face
+    var materials = [
+        new THREE.MeshStandardMaterial({ map: sideTexture }), // Right side
+        new THREE.MeshStandardMaterial({ map: sideTexture }), // Left side
+        new THREE.MeshStandardMaterial({ map: frontTexture }), // Top
+        new THREE.MeshStandardMaterial({ map: frontTexture }), // Bottom
+        new THREE.MeshStandardMaterial({ map: windowTexture }), // Front
+        new THREE.MeshStandardMaterial({ map: windowTexture })  // Back
+    ];
+
+    var buildingGeometry = new THREE.BoxGeometry(1, height, 1);
+    var building = new THREE.Mesh(buildingGeometry, materials);
+    building.position.set(x, height / 2 - 1, z);
+    
+    // Enable shadows if you have lights
+    building.castShadow = true;
+    building.receiveShadow = true;
+    
+    scene.add(building);
+    return building;
+}
 
         // Create mountains
         function createMountain(x, z) {
@@ -231,13 +280,26 @@
 
         // Create lakes
         function createLake(x, z) {
-            var lakeGeometry = new THREE.CircleGeometry(5, 32);
-            var lakeMaterial = new THREE.MeshBasicMaterial({ color: 0x1E90FF });
-            var lake = new THREE.Mesh(lakeGeometry, lakeMaterial);
-            lake.rotation.x = -Math.PI / 2;
-            lake.position.set(x, -0.95, z);
-            scene.add(lake);
-        }
+    // Load water texture
+    var waterTexture = new THREE.TextureLoader().load('https://media-hosting.imagekit.io/4a19d4502bab488d/%E5%B1%8F%E5%B9%95%E6%88%AA%E5%9B%BE%202025-04-19%20142908.png?Expires=1839652154&Key-Pair-Id=K2ZIVPTIP2VGHC&Signature=Kig2oNo8MDHTMGZ5WSBGuZC3jBEPcXk-Dm9Be~t8DQ6wgjXhoNRi1wwsfRvnC3Uml7e6jvm4YgrYZmiXRQJG7jSq-lYPjprgWcWlqZdRbdwHdW3Ae4HzmshKKjon8mTow6syNMzm0bh2BSCWIi6IjBf5dbDfd4GpgYabk5UYrp2Y~IWy8aqQRTf-ZGg2dKexyFt7mcTOthRyISUE1l~xngfjN9XkoUEmzdYb2e6Q2UuvuUxhVlYgpt54~1F5vUDCBowd4~R7Rvi2Vr6Tp~U50uycLZ0bdS2dsiNJ6ptkgye8Y1a8YIoXGNxG-u5T0IKoI0y4muCLG7Qu-AyOofWjeg__');
+    waterTexture.wrapS = waterTexture.wrapT = THREE.RepeatWrapping;
+    waterTexture.repeat.set(1, 1); // Adjust tiling based on your texture
+    
+    var lakeGeometry = new THREE.CircleGeometry(5, 32);
+    var lakeMaterial = new THREE.MeshStandardMaterial({
+        map: waterTexture,
+        side: THREE.DoubleSide,
+        roughness: 0,
+        metalness: 0
+    });
+    
+    var lake = new THREE.Mesh(lakeGeometry, lakeMaterial);
+    lake.rotation.x = -Math.PI / 2;
+    lake.position.set(x, -0.94, z); // Slightly above ground
+    scene.add(lake);
+    
+    return lake;
+}
 
         // Add multiple airports with runways, terminals, and gates
         for (let i = -5; i <= 5; i++) {
@@ -329,7 +391,7 @@
 		escMenu.id = 'escMenu';
 		escMenu.innerHTML = `
 			<h2>Paused</h2>
-			<p>Bilibili_飞向蓝天的电脑</p>
+			<p>Bilibili_飞的智动</p>
 			<button onclick="togglePause()">Back to Game</button>
 		`;
 		document.body.appendChild(escMenu);
