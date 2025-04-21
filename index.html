@@ -7,20 +7,34 @@
         body { margin: 0; }
         canvas { display: block; }
         #menu {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            text-align: center;
-            background-color: rgba(255, 255, 255, 0.8);
-            padding: 20px;
-            border-radius: 10px;
-        }
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    text-align: center;
+    background-image: url('https://img0.baidu.com/it/u=1129386123,1310696019&fm=253&fmt=auto&app=138&f=JPEG?w=1344&h=800');
+    background-size: cover;
+    background-position: left;
+    background-repeat: no-repeat;
+    padding: 5%; /* Padding relative to the screen size */
+    border-radius: 25px;
+    color: white;
+    width: 600vw; /* 60% of the viewport width */
+    max-width: 1300px; /* Maximum width for larger screens */
+    height: 60vh; /* 40% of the viewport height */
+    max-height: 5000px; /* Maximum height for larger screens */
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5); /* Optional: Add shadow for better visual appearance */
+}
         #menu button {
             margin: 10px;
             padding: 10px 20px;
             font-size: 16px;
         }
+        #menu h1 {
+    font-size: 3rem; /* Adjusts the font size */
+    font-weight: bold; /* Makes the text bold */
+    margin-bottom: 20px; /* Adds space below the heading */
+}
         #hud {
             position: absolute;
             top: 10px;
@@ -35,16 +49,22 @@
 </head>
 <body>
     <div id="menu">
-        <h1>3D Airplane Game</h1>
-        <button onclick="startGame('runway', 'airplane1')">Airplane 1 on Runway</button>
-        <button onclick="startGame('midair', 'airplane1')">Airplane 1 in Mid-Air</button>
-        <button onclick="startGame('runway', 'airplane2')">Airplane 2 on Runway</button>
-        <button onclick="startGame('midair', 'airplane2')">Airplane 2 in Mid-Air</button>
-        <button onclick="startGame('ground', 'car')">Airport Security Car</button>
-        <label>
-            <input type="checkbox" id="crashAnimationCheckbox"> Enable/Disable Crash
-        </label>
-    </div>
+    <h1>3D Airplane Game</h1>
+    <label for="vehicleSelect">Choose a vehicle:</label>
+    <select id="vehicleSelect">
+        <option value="airplane1">Airplane 1</option>
+        <option value="airplane2">Airplane 2</option>
+        <option value="car">Airport Security Car</option>
+    </select>
+    <br><br>
+    <button onclick="startGame('runway')">Start on Runway</button>
+    <button onclick="startGame('midair')">Start in Mid-Air</button>
+    <button onclick="startGame('ground')">Start on Ground</button>
+    <br><br>
+    <label>
+        <input type="checkbox" id="crashAnimationCheckbox"> Enable/Disable Crash
+    </label>
+</div>
     <div id="hud">
         <div>Speed: <span id="speed">0</span></div>
         <div>Altitude: <span id="altitude">0</span></div>
@@ -299,6 +319,27 @@
     scene.add(lake);
     
     return lake;
+}
+// Function to create a cloud box
+function createCloud(x, y, z) {
+    var cloudGeometry = new THREE.BoxGeometry(2, 1, 2); // Cloud shape
+    var cloudMaterial = new THREE.MeshBasicMaterial({
+        color: 0xffffff, // White color for clouds
+        opacity: 0.8,
+        transparent: true
+    });
+    var cloud = new THREE.Mesh(cloudGeometry, cloudMaterial);
+    cloud.position.set(x, y, z);
+    scene.add(cloud);
+    return cloud;
+}
+
+// Add multiple clouds to the scene
+for (let i = 0; i < 20; i++) {
+    let x = Math.random() * 100 - 50; // Random X position
+    let y = Math.random() * 20 + 20; // Random Y position (height)
+    let z = Math.random() * 100 - 50; // Random Z position
+    createCloud(x, y, z);
 }
 
         // Add multiple airports with runways, terminals, and gates
@@ -573,39 +614,50 @@
         });
 
          // Start game function
-        function startGame(startPosition, vehicleType) {
-            var menu = document.getElementById('menu');
-            menu.style.display = 'none'; // Hide the menu
+        function startGame(startPosition) {
+    var menu = document.getElementById('menu');
+    var hud = document.getElementById('hud');
+    var selectedVehicle = document.getElementById('vehicleSelect').value; // Get selected vehicle
 
-            crashAnimationEnabled = document.getElementById('crashAnimationCheckbox').checked;
-            crashed = false;
+    // Hide the menu and show the HUD
+    menu.style.display = 'none';
+    hud.style.display = 'block';
 
-            if (vehicleType === 'airplane1') {
-                vehicle = airplane1;
-            } else if (vehicleType === 'airplane2') {
-                vehicle = airplane2;
-            } else if (vehicleType === 'car') {
-                vehicle = car;
-            }
-            scene.add(vehicle);
+    crashAnimationEnabled = document.getElementById('crashAnimationCheckbox').checked;
+    crashed = false;
 
-            if (startPosition === 'runway') {
-                vehicle.position.set(1, 0, 10); // Start at the side of the runway
-                speed = 0; // No initial speed
-            } else if (startPosition === 'midair') {
-                vehicle.position.set(0, 10, 0); // Start in mid-air
-                speed = 0.1; // Set initial speed
-            } else if (startPosition === 'ground') {
-                vehicle.position.set(0, 0, 0); // Start on the ground
-                speed = 0; // No initial speed
-            }
-        }
+    // Select the vehicle based on the dropdown value
+    if (selectedVehicle === 'airplane1') {
+        vehicle = airplane1;
+    } else if (selectedVehicle === 'airplane2') {
+        vehicle = airplane2;
+    } else if (selectedVehicle === 'car') {
+        vehicle = car; // Set vehicle to the airport security car
+    }
+    scene.add(vehicle);
+
+    // Set the initial position based on startPosition
+    if (startPosition === 'runway') {
+        vehicle.position.set(1, 0, 10); // Start at the side of the runway
+        speed = 0; // No initial speed
+    } else if (startPosition === 'midair') {
+        vehicle.position.set(0, 10, 0); // Start in mid-air
+        speed = 0.1; // Set initial speed
+    } else if (startPosition === 'ground') {
+        vehicle.position.set(0, 0, 0); // Start on the ground
+        speed = 0; // No initial speed
+    }
+}
 
         //Close show message
         function ShowConfirmClose() {
             if (event.clientX > document.body.clientWidth && event.clientY < 0 || event.altKey)
                 window.event.returnValue = "Your game has not finished, are you sure you will leave?";
         }
+        document.addEventListener('DOMContentLoaded', () => {
+    // Hide HUD initially
+    document.getElementById('hud').style.display = 'none';
+});
     </script>
 <body onbeforeunload="ShowConfirmClose()">
 </html>
