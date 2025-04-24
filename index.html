@@ -567,25 +567,20 @@ document.getElementById('heading').innerText = headingDegrees.toFixed(2); // Dis
             gearCamera.updateProjectionMatrix();
         });
 
-        // Add controls
-        document.addEventListener('keydown', function(event) {
+      document.addEventListener('keydown', function(event) {
     if (vehicle && !crashed) {
         switch (event.key) {
             case 'w':
-                // Nose down (pitch decrease)
-                vehicle.rotateX(0.1);
+                if (vehicle !== car) vehicle.rotateX(0.1); // Nose down
                 break;
             case 's':
-                // Nose up (pitch increase)
-                vehicle.rotateX(-0.1);
+                if (vehicle !== car) vehicle.rotateX(-0.1); // Nose up
                 break;
             case 'a':
-                // Turn left (yaw increase)
-                vehicle.rotateY(0.1);
+                vehicle.rotateY(0.1); // Turn left
                 break;
             case 'd':
-                // Turn right (yaw decrease)
-                vehicle.rotateY(-0.1);
+                vehicle.rotateY(-0.1); // Turn right
                 break;
             case 'r':
                 window.onbeforeunload = function(event) {
