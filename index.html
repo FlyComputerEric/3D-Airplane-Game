@@ -463,10 +463,12 @@ for (let i = 0; i < 20; i++) {
             requestAnimationFrame(animate);
 
             if (vehicle && !crashed) {
-                // Move the vehicle forward based on speed and direction
-                vehicle.position.x += speed * Math.sin(vehicle.rotation.y) * Math.cos(vehicle.rotation.x);
-                vehicle.position.y -= speed * Math.sin(vehicle.rotation.x); // Invert the y-axis movement for airplanes
-                vehicle.position.z += speed * Math.cos(vehicle.rotation.y) * Math.cos(vehicle.rotation.x);
+                // Move the vehicle forward based on speed and direction// Move the vehicle forward based on speed and direction
+const forwardDirection = new THREE.Vector3(0, 0, 1); // Airplane's forward direction
+forwardDirection.applyQuaternion(vehicle.quaternion); // Apply the airplane's current rotation
+forwardDirection.normalize(); // Ensure it's a unit vector
+
+vehicle.position.addScaledVector(forwardDirection, speed); // Move the airplane forward
 
                 // Check for crash with the ground
                 if (vehicle.position.y < -0.95) {
@@ -495,44 +497,39 @@ for (let i = 0; i < 20; i++) {
                     }
                 }
 
-                // Update camera positions based on vehicle position
-                camera.position.set(
-                    vehicle.position.x - 5 * Math.sin(vehicle.rotation.y),
-                    vehicle.position.y + 2,
-                    vehicle.position.z - 5 * Math.cos(vehicle.rotation.y)
-                );
-                camera.lookAt(vehicle.position);
+              // Update camera positions based on vehicle position and rotation
+if (vehicle) {
+    const offset = new THREE.Vector3(0, 2, -5); // Offset from the vehicle
+    offset.applyQuaternion(vehicle.quaternion); // Rotate the offset based on the vehicle's rotation
+    camera.position.copy(vehicle.position.clone().add(offset)); // Set camera position relative to the vehicle
+    camera.lookAt(vehicle.position); // Make the camera look at the vehicle
 
-                cockpitCamera.position.set(
-                    vehicle.position.x,
-                    vehicle.position.y + 0.5,
-                    vehicle.position.z
-                );
-                cockpitCamera.lookAt(
-                    vehicle.position.x + Math.sin(vehicle.rotation.y),
-                    vehicle.position.y + 0.5,
-                    vehicle.position.z + Math.cos(vehicle.rotation.y)
-                );
+  // Update cockpit camera (inside the vehicle)
+cockpitCamera.position.copy(vehicle.position.clone().add(new THREE.Vector3(0, 0.5, 0.6))); // Adjust position to be inside the cockpit and forward
+const cockpitLookAt = new THREE.Vector3(0, 0, 2).applyQuaternion(vehicle.quaternion); // Forward direction based on airplane rotation
+cockpitCamera.lookAt(vehicle.position.clone().add(cockpitLookAt)); // Make the cockpit camera look forward
+  // Update wing camera (view from the wing)
+const leftWingPosition = new THREE.Vector3(-1, 1, -1); // Position relative to the airplane
+leftWingPosition.applyQuaternion(vehicle.quaternion); // Apply the airplane's rotation
+wingCamera.position.copy(vehicle.position.clone().add(leftWingPosition)); // Set wing camera position on the wing
+const wingLookAt = new THREE.Vector3(-1, 0, 3).applyQuaternion(vehicle.quaternion); // Look slightly outward from the wing
+wingCamera.lookAt(vehicle.position.clone().add(wingLookAt)); // Make the wing camera look outward
 
-                wingCamera.position.set(
-                    vehicle.position.x + (vehicle.children[0] ? vehicle.children[0].position.x : 0),
-                    vehicle.position.y,
-                    vehicle.position.z
-                );
-                wingCamera.lookAt(vehicle.position);
+    // Update gear camera (view from below)
+const gearPosition = new THREE.Vector3(0, -0.6, -1); // Position below the airplane
+gearPosition.applyQuaternion(vehicle.quaternion); // Apply the airplane's rotation
+gearCamera.position.copy(vehicle.position.clone().add(gearPosition)); // Set gear camera position below the airplane
+const gearLookAt = new THREE.Vector3(0, 0,5).applyQuaternion(vehicle.quaternion); // Look at the airplane body
+gearCamera.lookAt(vehicle.position.clone().add(gearLookAt)); // Make the gear camera look at the airplane
+}
 
-                gearCamera.position.set(
-                    vehicle.position.x,
-                    vehicle.position.y - 0.5,
-                    vehicle.position.z + 0.5
-                );
-                gearCamera.lookAt(vehicle.position);
+                // Normalize heading to ensure it's between 0 and 359
+let headingDegrees = (vehicle.rotation.y * (180 / Math.PI) + 360) % 360;
 
-                // Update HUD
-                document.getElementById('speed').innerText = (speed * 100).toFixed(2);
-                document.getElementById('altitude').innerText = vehicle.position.y.toFixed(2);
-                document.getElementById('heading').innerText = (vehicle.rotation.y * (180 / Math.PI)).toFixed(2);
-
+// Update HUD
+document.getElementById('speed').innerText = (speed * 100).toFixed(2);
+document.getElementById('altitude').innerText = vehicle.position.y.toFixed(2);
+document.getElementById('heading').innerText = headingDegrees.toFixed(2); // Display normalized heading
                 renderer.render(scene, currentCamera);
             }
         }
@@ -572,49 +569,53 @@ for (let i = 0; i < 20; i++) {
 
         // Add controls
         document.addEventListener('keydown', function(event) {
-            if (vehicle && !crashed) {
-                switch (event.key) {
-                    case 'w':
-                        vehicle.rotation.x += 0.1; // Turn nose down
-                        break;
-                    case 's':
-                        vehicle.rotation.x -= 0.1; // Turn nose up
-                        break;
-                    case 'a':
-                        vehicle.rotation.y += 0.1;
-                        break;
-                    case 'd':
-                        vehicle.rotation.y -= 0.1;
-                        break;
-                    case 'r':
-                        window.onbeforeunload = function(event) {
-                             event.returnValue = "Your game has not finished, are you sure you will restart?";
-                        };
-                        location.reload();
-                    case 'ArrowUp':
-                        speed += 0.01; // Increase speed
-                        break;
-                    case 'ArrowDown':
-                        speed = Math.max(0, speed - 0.01); // Decrease speed but not below 0
-                        break;
-                    case '1':
-                        currentCamera = camera; // Default camera
-                        break;
-                    case '2':
-                        currentCamera = cockpitCamera; // Cockpit view
-                        break;
-                    case '3':
-                        currentCamera = wingCamera; // Wing view
-                        break;
-                    case '4':
-                        currentCamera = gearCamera; // Landing gear view
-                        break;
-                }
-            }
-        });
+    if (vehicle && !crashed) {
+        switch (event.key) {
+            case 'w':
+                // Nose down (pitch decrease)
+                vehicle.rotateX(0.1);
+                break;
+            case 's':
+                // Nose up (pitch increase)
+                vehicle.rotateX(-0.1);
+                break;
+            case 'a':
+                // Turn left (yaw increase)
+                vehicle.rotateY(0.1);
+                break;
+            case 'd':
+                // Turn right (yaw decrease)
+                vehicle.rotateY(-0.1);
+                break;
+            case 'r':
+                window.onbeforeunload = function(event) {
+                    event.returnValue = "Your game has not finished, are you sure you will restart?";
+                };
+                location.reload();
+                break;
+            case 'ArrowUp':
+                speed += 0.01; // Increase speed
+                break;
+            case 'ArrowDown':
+                speed = Math.max(0, speed - 0.01); // Decrease speed but not below 0
+                break;
+            case '1':
+                currentCamera = camera; // Default camera
+                break;
+            case '2':
+                currentCamera = cockpitCamera; // Cockpit view
+                break;
+            case '3':
+                currentCamera = wingCamera; // Wing view
+                break;
+            case '4':
+                currentCamera = gearCamera; // Landing gear view
+                break;
+        }
+    }
+});
 
-         // Start game function
-        function startGame(startPosition) {
+         function startGame(startPosition) {
     var menu = document.getElementById('menu');
     var hud = document.getElementById('hud');
     var selectedVehicle = document.getElementById('vehicleSelect').value; // Get selected vehicle
@@ -636,7 +637,8 @@ for (let i = 0; i < 20; i++) {
     }
     scene.add(vehicle);
 
-    // Set the initial position based on startPosition
+    // Set the initial position and heading
+    vehicle.rotation.set(0, 0, 0); // Reset rotations to ensure heading starts at 0
     if (startPosition === 'runway') {
         vehicle.position.set(1, 0, 10); // Start at the side of the runway
         speed = 0; // No initial speed
@@ -647,6 +649,11 @@ for (let i = 0; i < 20; i++) {
         vehicle.position.set(0, 0, 0); // Start on the ground
         speed = 0; // No initial speed
     }
+
+    // Update the HUD to reflect the initial heading
+    document.getElementById('heading').innerText = "0.00"; // Ensure heading starts at 0
+    document.getElementById('speed').innerText = "0.00";
+    document.getElementById('altitude').innerText = vehicle.position.y.toFixed(2);
 }
 
         //Close show message
