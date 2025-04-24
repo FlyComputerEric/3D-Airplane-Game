@@ -1,0 +1,667 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>3D Airplane Game</title>
+    <style>
+        body { margin: 0; }
+        canvas { display: block; }
+        #menu {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            background-image: url('https://img0.baidu.com/it/u=1129386123,1310696019&fm=253&fmt=auto&app=138&f=JPEG?w=1344&h=800');
+            background-size: cover;
+            background-position: left;
+            background-repeat: no-repeat;
+            padding: 5%; /* Padding relative to the screen size */
+            border-radius: 25px;
+            color: white;
+            width: 600vw; /* 60% of the viewport width */
+            max-width: 1300px; /* Maximum width for larger screens */
+            height: 60vh; /* 40% of the viewport height */
+            max-height: 5000px; /* Maximum height for larger screens */
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5); /* Optional: Add shadow for better visual appearance */
+        }
+        #menu button {
+            margin: 10px;
+            padding: 10px 20px;
+            font-size: 16px;
+        }
+        #menu h1 {
+            font-size: 3rem; /* Adjusts the font size */
+            font-weight: bold; /* Makes the text bold */
+            margin-bottom: 20px; /* Adds space below the heading */
+        }
+        #hud {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            color: white;
+            font-size: 18px;
+            background-color: rgba(0, 0, 0, 0.5);
+            padding: 10px;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="menu">
+        <h1>3D Airplane Game</h1>
+        <label for="vehicleSelect">Choose a vehicle:</label>
+        <select id="vehicleSelect">
+            <option value="airplane1">Airplane 1</option>
+            <option value="airplane2">Airplane 2</option>
+            <option value="car">Airport Security Car</option>
+        </select>
+        <br><br>
+        <button onclick="startGame('runway')">Start on Runway</button>
+        <button onclick="startGame('midair')">Start in Mid-Air</button>
+        <button onclick="startGame('ground')">Start on Ground</button>
+        <br><br>
+        <label>
+            <input type="checkbox" id="crashAnimationCheckbox"> Enable/Disable Crash
+        </label>
+    </div>
+    <div id="hud">
+        <div>Speed: <span id="speed">0</span></div>
+        <div>Altitude: <span id="altitude">0</span></div>
+        <div>Heading: <span id="heading">0</span></div>
+    </div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script>
+        // Scene setup
+        var scene = new THREE.Scene();
+        var camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        var cockpitCamera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        var wingCamera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        var gearCamera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        var currentCamera = camera;
+        
+        // Renderer setup
+        var renderer = new THREE.WebGLRenderer();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setClearColor(0x87CEEB); // Set the background color to sky blue
+        document.body.appendChild(renderer.domElement);
+        
+        // Add a light
+        var ambientLight = new THREE.AmbientLight(0xffffff);
+        scene.add(ambientLight);
+        
+        // Create an airplane
+        function createAirplane(color) {
+            var airplaneGeometry = new THREE.BoxGeometry(1, 0.5, 2); // Longer body
+            var airplaneMaterial = new THREE.MeshBasicMaterial({ color: color });
+            var airplane = new THREE.Mesh(airplaneGeometry, airplaneMaterial);
+        
+            // Add cockpit (triangular shape)
+            var cockpitGeometry = new THREE.ConeGeometry(0.3, 0.5, 4);
+            var cockpitMaterial = new THREE.MeshBasicMaterial({ color: 0x888888 });
+            var cockpit = new THREE.Mesh(cockpitGeometry, cockpitMaterial);
+            cockpit.position.set(0, 0, 1.25);
+            cockpit.rotation.x = Math.PI / 2;
+            airplane.add(cockpit);
+        
+            // Add wings
+            var wingGeometry = new THREE.BoxGeometry(2, 0.1, 0.5); // Wider wings
+            var wingMaterial = new THREE.MeshBasicMaterial({ color: 0x0000ff });
+        
+            var leftWing = new THREE.Mesh(wingGeometry, wingMaterial);
+            leftWing.position.set(-1, 0, 0);
+            airplane.add(leftWing);
+        
+            var rightWing = new THREE.Mesh(wingGeometry, wingMaterial);
+            rightWing.position.set(1, 0, 0);
+            airplane.add(rightWing);
+        
+            // Add empennages (tail fins)
+            var tailGeometry = new THREE.BoxGeometry(0.1, 1, 0.3);
+            var tailMaterial = new THREE.MeshBasicMaterial({ color: 0x0000ff });
+        
+            var leftTail = new THREE.Mesh(tailGeometry, tailMaterial);
+            leftTail.position.set(-0.3, 0.1, -0.8);
+            leftTail.rotation.z = 92.7;
+            airplane.add(leftTail);
+        
+            var rightTail = new THREE.Mesh(tailGeometry, tailMaterial);
+            rightTail.position.set(0.3, 0.1, -0.8);
+            rightTail.rotation.z = 92.7;
+            airplane.add(rightTail);
+        
+            var verticalTailGeometry = new THREE.BoxGeometry(0.1, 0.5, 0.68);
+            var verticalTail = new THREE.Mesh(verticalTailGeometry, tailMaterial);
+            verticalTail.position.set(0, 0.3, -0.80);
+            verticalTail.rotation.x = Math.PI / 2;
+            airplane.add(verticalTail);
+        
+            // Add landing gear
+            var gearGeometry = new THREE.BoxGeometry(0.2, 0.2, 0.2);
+            var gearMaterial = new THREE.MeshBasicMaterial({ color: 0x000000 });
+        
+            var frontGear = new THREE.Mesh(gearGeometry, gearMaterial);
+            frontGear.position.set(0, -0.3, 0.6);
+            airplane.add(frontGear);
+        
+            var leftGear = new THREE.Mesh(gearGeometry, gearMaterial);
+            leftGear.position.set(-0.3, -0.3, -0.25);
+            airplane.add(leftGear);
+        
+            var rightGear = new THREE.Mesh(gearGeometry, gearMaterial);
+            rightGear.position.set(0.3, -0.3, -0.25);
+            airplane.add(rightGear);
+        
+            return airplane;
+        }
+        
+        var airplane1 = createAirplane(0xffffff);
+        var airplane2 = createAirplane(0xff0000);
+        
+        // Create a car
+        function createCar() {
+            var carGeometry = new THREE.BoxGeometry(0.5, 0.5, 1);
+            var carMaterial = new THREE.MeshBasicMaterial({ color: 0x000000 });
+            var car = new THREE.Mesh(carGeometry, carMaterial);
+        
+            // Add wheels
+            var wheelGeometry = new THREE.BoxGeometry(0.1, 0.2, 0.2);
+            var wheelMaterial = new THREE.MeshBasicMaterial({ color: 0xffffff });
+        
+            var frontLeftWheel = new THREE.Mesh(wheelGeometry, wheelMaterial);
+            frontLeftWheel.position.set(-0.2, -0.35, 0.25);
+            car.add(frontLeftWheel);
+        
+            var frontRightWheel = new THREE.Mesh(wheelGeometry, wheelMaterial);
+            frontRightWheel.position.set(0.2, -0.35, 0.25);
+            car.add(frontRightWheel);
+        
+            var backLeftWheel = new THREE.Mesh(wheelGeometry, wheelMaterial);
+            backLeftWheel.position.set(-0.2, -0.35, -0.25);
+            car.add(backLeftWheel);
+        
+            var backRightWheel = new THREE.Mesh(wheelGeometry, wheelMaterial);
+            backRightWheel.position.set(0.2, -0.35, -0.25);
+            car.add(backRightWheel);
+        
+            return car;
+        }
+        
+        var car = createCar();
+        
+        // Create a simple ground with green color
+        var groundTexture = new THREE.TextureLoader().load('https://tse3-mm.cn.bing.net/th/id/OIP-C.T1tIeMTtO9O5vR3rrFZ-ngHaEK?rs=1&pid=ImgDetMain');
+        	groundTexture.wrapS = groundTexture.wrapT = THREE.RepeatWrapping; 
+        	groundTexture.repeat.set(200, 200); // Adjust based on your texture size
+        
+        	var groundGeometry = new THREE.PlaneGeometry(2000, 2000);
+        	var groundMaterial = new THREE.MeshStandardMaterial({ 
+           	 map: groundTexture,
+           	 side: THREE.DoubleSide
+        	});
+        	var ground = new THREE.Mesh(groundGeometry, groundMaterial);
+        	ground.rotation.x = Math.PI / 2;
+        	ground.position.y = -1;
+        	scene.add(ground);
+        
+        // Create airports with runways, terminals, and gates
+        function createAirport(x, z, runwayRotation) {
+            var airportGeometry = new THREE.BoxGeometry(0.000001, 0.000001, 0.000001);
+            var airportMaterial = new THREE.MeshBasicMaterial({ color: 0x0000ff });
+            var airport = new THREE.Mesh(airportGeometry, airportMaterial);
+            airport.position.set(x, -0.95, z);
+            scene.add(airport);
+        
+            // Load runway texture
+        	var runwayTexture = new THREE.TextureLoader().load('https://media-hosting.imagekit.io/ae5ae9d571a44a58/%E5%B1%8F%E5%B9%95%E6%88%AA%E5%9B%BE%202025-04-19%20133245.png?Expires=1839649748&Key-Pair-Id=K2ZIVPTIP2VGHC&Signature=GX4tTPskthxjqCIFpFDKDmmFOxivlF98zyIXXvvDQERVmVHCTM0stmjRxF3h4M3krzRL~q2N3MK9P0GX9Co2Mmv2CJgDROFliKkrylL9edr-K6B3PLVg6s0VWnbSzzvPfiDHZmsuMKP0cAb6uKhph0PmGqvZxr4sjHd85OcBSZMuWENga0SMcJbNuluogl933MwO7jUK5EdTQrU9wjJBJvfx56jRiWF8Qm~e14Qp-cLo7YDvyyIHg33ShvpEMH7cik-BAbIPjeJSakHEQmcUiCncuwXLUr3Bt3LOk9QpDExoj8DKFhcZbhZQCXg63uf0D1LoalcFlaBRjfb578eCZw__');
+        	runwayTexture.wrapS = runwayTexture.wrapT = THREE.RepeatWrapping;
+        	runwayTexture.repeat.set(1, 1); // Adjust based on your texture aspect ratio
+        	
+        	// Load runway markings texture (optional)
+        	var markingsTexture = new THREE.TextureLoader().load('textures/runway_markings.png');
+        	markingsTexture.wrapS = markingsTexture.wrapT = THREE.RepeatWrapping;
+        	
+        	// Create runway material
+        	var runwayMaterial = new THREE.MeshStandardMaterial({
+        	    map: runwayTexture,
+        	    side: THREE.DoubleSide,
+        	    roughness: 0.7,
+        	    metalness: 0.3
+        	});
+        	
+        	// Create runway mesh
+        	var runwayGeometry = new THREE.PlaneGeometry(20, 2);
+        	var runway = new THREE.Mesh(runwayGeometry, runwayMaterial);
+            runway.rotation.x = Math.PI / 2;
+            runway.rotation.z = runwayRotation;
+            runway.position.set(x, -0.94, z + 10); // Adjust position to match the longer runway
+            scene.add(runway);
+        
+            var terminalGeometry = new THREE.BoxGeometry(3, 1, 1);
+            var terminalMaterial = new THREE.MeshBasicMaterial({ color: 0x8B4513 });
+            var terminal = new THREE.Mesh(terminalGeometry, terminalMaterial);
+            terminal.position.set(x + 4, 0, z + 2);
+            scene.add(terminal);
+        
+            var gateGeometry = new THREE.BoxGeometry(0.5, 0.5, 0.5);
+            var gateMaterial = new THREE.MeshBasicMaterial({ color: 0xFFD700 });
+            var gate = new THREE.Mesh(gateGeometry, gateMaterial);
+            gate.position.set(x + 4, 0.25, z + 3);
+            scene.add(gate);
+        }
+        
+        // Create tall and colorful buildings
+        function createBuilding(x, z) {
+            var height = Math.random() * 5 + 1;
+            
+            // Load building textures (front, side, top)
+            var frontTexture = new THREE.TextureLoader().load('https://media-hosting.imagekit.io/e453cefa64b141ee/667b3862-9b4c-4e98-aee7-874f1b8f78cb.jpg?Expires=1839651765&Key-Pair-Id=K2ZIVPTIP2VGHC&Signature=cRPAUACtXz9Z5SMeLhMdDiLzDwV27P~2vkUgtFWQ2SLWDqo0eQ~rvopWWaoIbtWeVOH30JojSJ1ZwM0GnZl~IYLDe3bKqJcwqxNbifB~NoFrfjv7MF~of4HOsNUEpl~uPOmQwUE6gxeO86U-XJUedT~CDYUTvHc72jZVIpUnYon9Sq7476Xe2HGDpvOivSpYmMkCD38U6e4VlQON7dYHzmeJZDNXBfcsTZTJ2y5RH8xOdSusD1Seiw1V5f57RS9bRQqZER8eSaOlhsVCQD1hO3GSMDodRoNa3WxDWGXvJEgmFyoZXAOX4HptlscI-nYPY3rXLYf~0zN4v85VEw00fw__');
+            var sideTexture = new THREE.TextureLoader().load('https://media-hosting.imagekit.io/e453cefa64b141ee/667b3862-9b4c-4e98-aee7-874f1b8f78cb.jpg?Expires=1839651765&Key-Pair-Id=K2ZIVPTIP2VGHC&Signature=cRPAUACtXz9Z5SMeLhMdDiLzDwV27P~2vkUgtFWQ2SLWDqo0eQ~rvopWWaoIbtWeVOH30JojSJ1ZwM0GnZl~IYLDe3bKqJcwqxNbifB~NoFrfjv7MF~of4HOsNUEpl~uPOmQwUE6gxeO86U-XJUedT~CDYUTvHc72jZVIpUnYon9Sq7476Xe2HGDpvOivSpYmMkCD38U6e4VlQON7dYHzmeJZDNXBfcsTZTJ2y5RH8xOdSusD1Seiw1V5f57RS9bRQqZER8eSaOlhsVCQD1hO3GSMDodRoNa3WxDWGXvJEgmFyoZXAOX4HptlscI-nYPY3rXLYf~0zN4v85VEw00fw__');
+            var windowTexture = new THREE.TextureLoader().load('https://media-hosting.imagekit.io/e453cefa64b141ee/667b3862-9b4c-4e98-aee7-874f1b8f78cb.jpg?Expires=1839651765&Key-Pair-Id=K2ZIVPTIP2VGHC&Signature=cRPAUACtXz9Z5SMeLhMdDiLzDwV27P~2vkUgtFWQ2SLWDqo0eQ~rvopWWaoIbtWeVOH30JojSJ1ZwM0GnZl~IYLDe3bKqJcwqxNbifB~NoFrfjv7MF~of4HOsNUEpl~uPOmQwUE6gxeO86U-XJUedT~CDYUTvHc72jZVIpUnYon9Sq7476Xe2HGDpvOivSpYmMkCD38U6e4VlQON7dYHzmeJZDNXBfcsTZTJ2y5RH8xOdSusD1Seiw1V5f57RS9bRQqZER8eSaOlhsVCQD1hO3GSMDodRoNa3WxDWGXvJEgmFyoZXAOX4HptlscI-nYPY3rXLYf~0zN4v85VEw00fw__');
+            
+            // Configure texture repeating
+            [frontTexture, sideTexture, windowTexture].forEach(tex => {
+        tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+        tex.repeat.set(1, Math.floor(height)); // Adjust based on building height
+            });
+        
+            // Create materials for each face
+            var materials = [
+        new THREE.MeshStandardMaterial({ map: sideTexture }), // Right side
+        new THREE.MeshStandardMaterial({ map: sideTexture }), // Left side
+        new THREE.MeshStandardMaterial({ map: frontTexture }), // Top
+        new THREE.MeshStandardMaterial({ map: frontTexture }), // Bottom
+        new THREE.MeshStandardMaterial({ map: windowTexture }), // Front
+        new THREE.MeshStandardMaterial({ map: windowTexture })  // Back
+            ];
+        
+            var buildingGeometry = new THREE.BoxGeometry(1, height, 1);
+            var building = new THREE.Mesh(buildingGeometry, materials);
+            building.position.set(x, height / 2 - 1, z);
+            
+            // Enable shadows if you have lights
+            building.castShadow = true;
+            building.receiveShadow = true;
+            
+            scene.add(building);
+            return building;
+        }
+        
+        // Create mountains
+        function createMountain(x, z) {
+            var height = Math.random() * 10 + 5;
+            var mountainGeometry = new THREE.ConeGeometry(5, height, 32);
+            var mountainMaterial = new THREE.MeshBasicMaterial({ color: 0x8B4513 });
+            var mountain = new THREE.Mesh(mountainGeometry, mountainMaterial);
+            mountain.position.set(x, height / 2 - 1, z);
+            scene.add(mountain);
+            return mountain;
+        }
+        
+        // Create lakes
+        function createLake(x, z) {
+            // Load water texture
+            var waterTexture = new THREE.TextureLoader().load('https://media-hosting.imagekit.io/4a19d4502bab488d/%E5%B1%8F%E5%B9%95%E6%88%AA%E5%9B%BE%202025-04-19%20142908.png?Expires=1839652154&Key-Pair-Id=K2ZIVPTIP2VGHC&Signature=Kig2oNo8MDHTMGZ5WSBGuZC3jBEPcXk-Dm9Be~t8DQ6wgjXhoNRi1wwsfRvnC3Uml7e6jvm4YgrYZmiXRQJG7jSq-lYPjprgWcWlqZdRbdwHdW3Ae4HzmshKKjon8mTow6syNMzm0bh2BSCWIi6IjBf5dbDfd4GpgYabk5UYrp2Y~IWy8aqQRTf-ZGg2dKexyFt7mcTOthRyISUE1l~xngfjN9XkoUEmzdYb2e6Q2UuvuUxhVlYgpt54~1F5vUDCBowd4~R7Rvi2Vr6Tp~U50uycLZ0bdS2dsiNJ6ptkgye8Y1a8YIoXGNxG-u5T0IKoI0y4muCLG7Qu-AyOofWjeg__');
+            waterTexture.wrapS = waterTexture.wrapT = THREE.RepeatWrapping;
+            waterTexture.repeat.set(1, 1); // Adjust tiling based on your texture
+            
+            var lakeGeometry = new THREE.CircleGeometry(5, 32);
+            var lakeMaterial = new THREE.MeshStandardMaterial({
+        map: waterTexture,
+        side: THREE.DoubleSide,
+        roughness: 0,
+        metalness: 0
+            });
+            
+            var lake = new THREE.Mesh(lakeGeometry, lakeMaterial);
+            lake.rotation.x = -Math.PI / 2;
+            lake.position.set(x, -0.94, z); // Slightly above ground
+            scene.add(lake);
+            
+            return lake;
+        }
+        // Function to create a cloud box
+        function createCloud(x, y, z) {
+            var cloudGeometry = new THREE.BoxGeometry(2, 1, 2); // Cloud shape
+            var cloudMaterial = new THREE.MeshBasicMaterial({
+        color: 0xffffff, // White color for clouds
+        opacity: 0.8,
+        transparent: true
+            });
+            var cloud = new THREE.Mesh(cloudGeometry, cloudMaterial);
+            cloud.position.set(x, y, z);
+            scene.add(cloud);
+            return cloud;
+        }
+        
+        // Add multiple clouds to the scene
+        for (let i = 0; i < 20; i++) {
+            let x = Math.random() * 100 - 50; // Random X position
+            let y = Math.random() * 20 + 20; // Random Y position (height)
+            let z = Math.random() * 100 - 50; // Random Z position
+            createCloud(x, y, z);
+        }
+        
+        // Add multiple airports with runways, terminals, and gates
+        for (let i = -5; i <= 5; i++) {
+            for (let j = -5; j <= 5; j++) {
+                var runwayRotation = (Math.random() < 0.5) ? 0 : Math.PI / 4; // Randomly set runway rotation to 0 or 45 degrees
+                createAirport(i * 20, j * 20, runwayRotation);
+            }
+        }
+        for (let i = 20; i <= 25; i++) {
+            for (let j = 20; j <= 25; j++) {
+                var runwayRotation = (Math.random() < 0.5) ? 0 : Math.PI / 4; // Randomly set runway rotation to 0 or 45 degrees
+                createAirport(i * 20, j * 20, runwayRotation);
+            }
+        }
+        
+        // Set to track occupied positions
+        var occupiedPositions = new Set();
+        
+        // Add tall and colorful buildings all over the map
+        var buildings = [];
+        for (let i = -25; i <= 25; i++) {
+            for (let j = -25; j <= 25; j++) {
+                if (Math.random() < 0.1) {
+                    let x, z;
+                    do {
+                        x = i * 4;
+                        z = j * 4;
+                    } while (occupiedPositions.has(`${x},${z}`));
+                    occupiedPositions.add(`${x},${z}`);
+                    buildings.push(createBuilding(x, z));
+                }
+            }
+        }
+        
+        // Add mountains and lakes
+        var mountains = [];
+        for (let i = -10; i <= 10; i++) {
+            for (let j = -10; j <= 10; j++) {
+                if (Math.random() < 0.05) {
+                    mountains.push(createMountain(i * 20, j * 20));
+                }
+                if (Math.random() < 0.05) {
+                    createLake(i * 20, j * 20);
+                }
+            }
+        }
+        for (let i = 16; i <= 32; i++) {
+            for (let j = 16; j <= 32; j++) {
+                if (Math.random() < 0.05) {
+                    mountains.push(createMountain(i * 20, j * 20));
+                }
+                if (Math.random() < 0.05) {
+                    createLake(i * 20, j * 20);
+                }
+            }
+        }
+        
+        // Variable to control vehicle speed
+        var speed = 0;
+        var vehicle = null;
+        var crashed = false;
+        var crashAnimationEnabled = false;
+        		
+        	// Add CSS for ESC Menu
+        		var style = document.createElement('style');
+        		style.innerHTML = `
+        			#escMenu {
+        				position: absolute;
+        				top: 50%;
+        				left: 50%;
+        				transform: translate(-50%, -50%);
+        				text-align: center;
+        				background-color: rgba(0, 0, 0, 0.8);
+        				color: white;
+        				padding: 20px;
+        				border-radius: 10px;
+        			display: none;
+        			}
+        			#escMenu button {
+        				margin: 10px;
+        				padding: 10px 20px;
+        				font-size: 16px;
+        			}
+        		`;
+        		document.head.appendChild(style);
+        
+        		// Create ESC Menu HTML
+        		var escMenu = document.createElement('div');
+        		escMenu.id = 'escMenu';
+        		escMenu.innerHTML = `
+        			<h2>Paused</h2>
+        			<p>Bilibili_飞的智动</p>
+        			<button onclick="togglePause()">Back to Game</button>
+        		`;
+        		document.body.appendChild(escMenu);
+        
+        		// JavaScript for ESC Menu Functionality
+        		var isPaused = false;
+        
+        		function togglePause() {
+        			var escMenu = document.getElementById('escMenu');
+        			isPaused = !isPaused;
+        
+        			if (isPaused) {
+        				escMenu.style.display = 'block';
+        				speed = 0;
+        			} else {
+        				escMenu.style.display = 'none';
+        			}
+        		}
+        
+        		document.addEventListener('keydown', function(event) {
+        			if (event.key === 'Escape') {
+        				togglePause();
+        			}
+        		});
+        
+        // Animation loop
+        function animate() {
+            requestAnimationFrame(animate);
+        
+            if (vehicle && !crashed) {
+                // Move the vehicle forward based on speed and direction
+                vehicle.position.x += speed * Math.sin(vehicle.rotation.y) * Math.cos(vehicle.rotation.x);
+                vehicle.position.y -= speed * Math.sin(vehicle.rotation.x); // Invert the y-axis movement for airplanes
+                vehicle.position.z += speed * Math.cos(vehicle.rotation.y) * Math.cos(vehicle.rotation.x);
+        
+                // Check for crash with the ground
+                if (vehicle.position.y < -0.95) {
+                    if (crashAnimationEnabled) {
+                        triggerCrashAnimation();
+                    }
+                }
+        
+                // Check for crash with buildings
+                for (let building of buildings) {
+                    if (vehicle.position.distanceTo(building.position) < 2.2) {
+                        if (crashAnimationEnabled) {
+                            triggerCrashAnimation();
+                        }
+                        break;
+                    }
+                }
+        
+                // Check for crash with mountains
+                for (let mountain of mountains) {
+                    if (vehicle.position.distanceTo(mountain.position) < 6.5) {
+                        if (crashAnimationEnabled) {
+                            triggerCrashAnimation();
+                        }
+                        break;
+                    }
+                }
+        
+                // Update camera positions based on vehicle position
+                camera.position.set(
+                    vehicle.position.x - 5 * Math.sin(vehicle.rotation.y),
+                    vehicle.position.y + 2,
+                    vehicle.position.z - 5 * Math.cos(vehicle.rotation.y)
+                );
+                camera.lookAt(vehicle.position);
+        
+                cockpitCamera.position.set(
+                    vehicle.position.x,
+                    vehicle.position.y + 0.5,
+                    vehicle.position.z
+                );
+                cockpitCamera.lookAt(
+                    vehicle.position.x + Math.sin(vehicle.rotation.y),
+                    vehicle.position.y + 0.5,
+                    vehicle.position.z + Math.cos(vehicle.rotation.y)
+                );
+        
+                wingCamera.position.set(
+                    vehicle.position.x + (vehicle.children[0] ? vehicle.children[0].position.x : 0),
+                    vehicle.position.y,
+                    vehicle.position.z
+                );
+                wingCamera.lookAt(vehicle.position);
+        
+                gearCamera.position.set(
+                    vehicle.position.x,
+                    vehicle.position.y - 0.5,
+                    vehicle.position.z + 0.5
+                );
+                gearCamera.lookAt(vehicle.position);
+        
+                // Update HUD
+                document.getElementById('speed').innerText = (speed * 100).toFixed(2);
+                document.getElementById('altitude').innerText = vehicle.position.y.toFixed(2);
+                document.getElementById('heading').innerText = (vehicle.rotation.y * (180 / Math.PI)).toFixed(2);
+        
+                renderer.render(scene, currentCamera);
+            }
+        }
+        
+        function triggerCrashAnimation() {
+            // Example crash animation logic
+            var explosionGeometry = new THREE.SphereGeometry(1, 32, 32);
+            var explosionMaterial = new THREE.MeshBasicMaterial({ color: 0xff0000 });
+            var explosion = new THREE.Mesh(explosionGeometry, explosionMaterial);
+            explosion.position.copy(vehicle.position);
+            scene.add(explosion);
+        
+            setTimeout(() => {
+                scene.remove(explosion);
+            }, 1000);
+        
+            speed = 0; // Stop the vehicle
+            crashed = true;
+        }
+        
+        animate();
+        
+        // Handle window resize
+        window.addEventListener('resize', function() {
+            var width = window.innerWidth;
+            var height = window.innerHeight;
+            renderer.setSize(width, height);
+            camera.aspect = width / height;
+            cockpitCamera.aspect = width / height;
+            wingCamera.aspect = width / height;
+            gearCamera.aspect = width / height;
+            camera.updateProjectionMatrix();
+            cockpitCamera.updateProjectionMatrix();
+            wingCamera.updateProjectionMatrix();
+            gearCamera.updateProjectionMatrix();
+        });
+        
+        // Add controls
+        document.addEventListener('keydown', function(event) {
+            if (vehicle && !crashed) {
+                switch (event.key) {
+                    case 'w':
+                        vehicle.rotation.x += 0.1; // Turn nose down
+                        break;
+                    case 's':
+                        vehicle.rotation.x -= 0.1; // Turn nose up
+                        break;
+                    case 'a':
+                        vehicle.rotation.y += 0.1;
+                        break;
+                    case 'd':
+                        vehicle.rotation.y -= 0.1;
+                        break;
+                    case 'r':
+                        window.onbeforeunload = function(event) {
+                             event.returnValue = "Your game has not finished, are you sure you will restart?";
+                        };
+                        location.reload();
+                    case 'ArrowUp':
+                        speed += 0.01; // Increase speed
+                        break;
+                    case 'ArrowDown':
+                        speed = Math.max(0, speed - 0.01); // Decrease speed but not below 0
+                        break;
+                    case '1':
+                        currentCamera = camera; // Default camera
+                        break;
+                    case '2':
+                        currentCamera = cockpitCamera; // Cockpit view
+                        break;
+                    case '3':
+                        currentCamera = wingCamera; // Wing view
+                        break;
+                    case '4':
+                        currentCamera = gearCamera; // Landing gear view
+                        break;
+                }
+            }
+        });
+        
+         // Start game function
+        function startGame(startPosition) {
+            var menu = document.getElementById('menu');
+            var hud = document.getElementById('hud');
+            var selectedVehicle = document.getElementById('vehicleSelect').value; // Get selected vehicle
+        
+            // Hide the menu and show the HUD
+            menu.style.display = 'none';
+            hud.style.display = 'block';
+        
+            crashAnimationEnabled = document.getElementById('crashAnimationCheckbox').checked;
+            crashed = false;
+        
+            // Select the vehicle based on the dropdown value
+            if (selectedVehicle === 'airplane1') {
+        vehicle = airplane1;
+            } else if (selectedVehicle === 'airplane2') {
+        vehicle = airplane2;
+            } else if (selectedVehicle === 'car') {
+        vehicle = car; // Set vehicle to the airport security car
+            }
+            scene.add(vehicle);
+        
+            // Set the initial position based on startPosition
+            if (startPosition === 'runway') {
+        vehicle.position.set(1, 0, 10); // Start at the side of the runway
+        speed = 0; // No initial speed
+            } else if (startPosition === 'midair') {
+        vehicle.position.set(0, 10, 0); // Start in mid-air
+        speed = 0.1; // Set initial speed
+            } else if (startPosition === 'ground') {
+        vehicle.position.set(0, 0, 0); // Start on the ground
+        speed = 0; // No initial speed
+            }
+        }
+        
+        //Close show message
+        function ShowConfirmClose() {
+            if (event.clientX > document.body.clientWidth && event.clientY < 0 || event.altKey)
+                window.event.returnValue = "Your game has not finished, are you sure you will leave?";
+        }
+        document.addEventListener('DOMContentLoaded', () => {
+            // Hide HUD initially
+            document.getElementById('hud').style.display = 'none';
+        });
+    </script>
+
+    <body onbeforeunload="ShowConfirmClose()">
+
+</html>
