@@ -11,9 +11,9 @@ Control:
 7. 1 change to view 1(Default view)
 8. 2 change to view 2(Cockpit view)
 9. 3 change to view 3(Right wing view)
-10. 4 change to view 4(Gear view)
-11. ESC pause game
-12. R restart the game
+ 10. 4 change to view 4(Gear view)
+ 11. ESC pause game
+ 12. R restart the game
 
 Updates:
 
