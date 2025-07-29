@@ -213,12 +213,12 @@
             scene.add(airport);
 
             // Load runway texture
-	var runwayTexture = new THREE.TextureLoader().load('https://media-hosting.imagekit.io/ae5ae9d571a44a58/%E5%B1%8F%E5%B9%95%E6%88%AA%E5%9B%BE%202025-04-19%20133245.png?Expires=1839649748&Key-Pair-Id=K2ZIVPTIP2VGHC&Signature=GX4tTPskthxjqCIFpFDKDmmFOxivlF98zyIXXvvDQERVmVHCTM0stmjRxF3h4M3krzRL~q2N3MK9P0GX9Co2Mmv2CJgDROFliKkrylL9edr-K6B3PLVg6s0VWnbSzzvPfiDHZmsuMKP0cAb6uKhph0PmGqvZxr4sjHd85OcBSZMuWENga0SMcJbNuluogl933MwO7jUK5EdTQrU9wjJBJvfx56jRiWF8Qm~e14Qp-cLo7YDvyyIHg33ShvpEMH7cik-BAbIPjeJSakHEQmcUiCncuwXLUr3Bt3LOk9QpDExoj8DKFhcZbhZQCXg63uf0D1LoalcFlaBRjfb578eCZw__');
+	var runwayTexture = new THREE.TextureLoader().load('https://raw.githubusercontent.com/FlyComputerEric/3D-Airplane-Game/refs/heads/main/texture_runway.png');
 	runwayTexture.wrapS = runwayTexture.wrapT = THREE.RepeatWrapping;
-	runwayTexture.repeat.set(1, 1); // Adjust based on your texture aspect ratio
+	runwayTexture.repeat.set(3.5, 1); // Adjust based on your texture aspect ratio
 	
 	// Load runway markings texture (optional)
-	var markingsTexture = new THREE.TextureLoader().load('textures/runway_markings.png');
+	var markingsTexture = new THREE.TextureLoader().load('');
 	markingsTexture.wrapS = markingsTexture.wrapT = THREE.RepeatWrapping;
 	
 	// Create runway material
@@ -255,9 +255,9 @@
     var height = Math.random() * 5 + 1;
     
     // Load building textures (front, side, top)
-    var frontTexture = new THREE.TextureLoader().load('https://media-hosting.imagekit.io/e453cefa64b141ee/667b3862-9b4c-4e98-aee7-874f1b8f78cb.jpg?Expires=1839651765&Key-Pair-Id=K2ZIVPTIP2VGHC&Signature=cRPAUACtXz9Z5SMeLhMdDiLzDwV27P~2vkUgtFWQ2SLWDqo0eQ~rvopWWaoIbtWeVOH30JojSJ1ZwM0GnZl~IYLDe3bKqJcwqxNbifB~NoFrfjv7MF~of4HOsNUEpl~uPOmQwUE6gxeO86U-XJUedT~CDYUTvHc72jZVIpUnYon9Sq7476Xe2HGDpvOivSpYmMkCD38U6e4VlQON7dYHzmeJZDNXBfcsTZTJ2y5RH8xOdSusD1Seiw1V5f57RS9bRQqZER8eSaOlhsVCQD1hO3GSMDodRoNa3WxDWGXvJEgmFyoZXAOX4HptlscI-nYPY3rXLYf~0zN4v85VEw00fw__');
-    var sideTexture = new THREE.TextureLoader().load('https://media-hosting.imagekit.io/e453cefa64b141ee/667b3862-9b4c-4e98-aee7-874f1b8f78cb.jpg?Expires=1839651765&Key-Pair-Id=K2ZIVPTIP2VGHC&Signature=cRPAUACtXz9Z5SMeLhMdDiLzDwV27P~2vkUgtFWQ2SLWDqo0eQ~rvopWWaoIbtWeVOH30JojSJ1ZwM0GnZl~IYLDe3bKqJcwqxNbifB~NoFrfjv7MF~of4HOsNUEpl~uPOmQwUE6gxeO86U-XJUedT~CDYUTvHc72jZVIpUnYon9Sq7476Xe2HGDpvOivSpYmMkCD38U6e4VlQON7dYHzmeJZDNXBfcsTZTJ2y5RH8xOdSusD1Seiw1V5f57RS9bRQqZER8eSaOlhsVCQD1hO3GSMDodRoNa3WxDWGXvJEgmFyoZXAOX4HptlscI-nYPY3rXLYf~0zN4v85VEw00fw__');
-    var windowTexture = new THREE.TextureLoader().load('https://media-hosting.imagekit.io/e453cefa64b141ee/667b3862-9b4c-4e98-aee7-874f1b8f78cb.jpg?Expires=1839651765&Key-Pair-Id=K2ZIVPTIP2VGHC&Signature=cRPAUACtXz9Z5SMeLhMdDiLzDwV27P~2vkUgtFWQ2SLWDqo0eQ~rvopWWaoIbtWeVOH30JojSJ1ZwM0GnZl~IYLDe3bKqJcwqxNbifB~NoFrfjv7MF~of4HOsNUEpl~uPOmQwUE6gxeO86U-XJUedT~CDYUTvHc72jZVIpUnYon9Sq7476Xe2HGDpvOivSpYmMkCD38U6e4VlQON7dYHzmeJZDNXBfcsTZTJ2y5RH8xOdSusD1Seiw1V5f57RS9bRQqZER8eSaOlhsVCQD1hO3GSMDodRoNa3WxDWGXvJEgmFyoZXAOX4HptlscI-nYPY3rXLYf~0zN4v85VEw00fw__');
+    var frontTexture = new THREE.TextureLoader().load('https://raw.githubusercontent.com/FlyComputerEric/3D-Airplane-Game/refs/heads/main/texture_building.jpg');
+    var sideTexture = new THREE.TextureLoader().load('https://raw.githubusercontent.com/FlyComputerEric/3D-Airplane-Game/refs/heads/main/texture_building.jpg');
+    var windowTexture = new THREE.TextureLoader().load('https://raw.githubusercontent.com/FlyComputerEric/3D-Airplane-Game/refs/heads/main/texture_building.jpg');
     
     // Configure texture repeating
     [frontTexture, sideTexture, windowTexture].forEach(tex => {
@@ -301,7 +301,7 @@
         // Create lakes
         function createLake(x, z) {
     // Load water texture
-    var waterTexture = new THREE.TextureLoader().load('https://media-hosting.imagekit.io/4a19d4502bab488d/%E5%B1%8F%E5%B9%95%E6%88%AA%E5%9B%BE%202025-04-19%20142908.png?Expires=1839652154&Key-Pair-Id=K2ZIVPTIP2VGHC&Signature=Kig2oNo8MDHTMGZ5WSBGuZC3jBEPcXk-Dm9Be~t8DQ6wgjXhoNRi1wwsfRvnC3Uml7e6jvm4YgrYZmiXRQJG7jSq-lYPjprgWcWlqZdRbdwHdW3Ae4HzmshKKjon8mTow6syNMzm0bh2BSCWIi6IjBf5dbDfd4GpgYabk5UYrp2Y~IWy8aqQRTf-ZGg2dKexyFt7mcTOthRyISUE1l~xngfjN9XkoUEmzdYb2e6Q2UuvuUxhVlYgpt54~1F5vUDCBowd4~R7Rvi2Vr6Tp~U50uycLZ0bdS2dsiNJ6ptkgye8Y1a8YIoXGNxG-u5T0IKoI0y4muCLG7Qu-AyOofWjeg__');
+    var waterTexture = new THREE.TextureLoader().load('https://img2.baidu.com/it/u=2639447110,2042750116&fm=253&fmt=auto&app=138&f=JPEG?w=500&h=667');
     waterTexture.wrapS = waterTexture.wrapT = THREE.RepeatWrapping;
     waterTexture.repeat.set(1, 1); // Adjust tiling based on your texture
     
@@ -432,7 +432,7 @@ for (let i = 0; i < 20; i++) {
 		escMenu.id = 'escMenu';
 		escMenu.innerHTML = `
 			<h2>Paused</h2>
-			<p>Bilibili_飞的智动</p>
+			<p>Bilibili_椋炵殑鏅哄姩</p>
 			<button onclick="togglePause()">Back to Game</button>
 		`;
 		document.body.appendChild(escMenu);
